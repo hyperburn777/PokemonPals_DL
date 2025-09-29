@@ -63,7 +63,27 @@ The model will be tested on labeled images of individual Pokémon with the goal 
 
 ## Dataset
 
-The model will be trained on a labeled dataset of roughly 2,000 images of various Pokémon, with augmentation if the initial size proves insufficient.
+Below are some examples of datasets we will use to achieve our basic functionality, which is to ID individual Pokemon.
+
+### Training Datasets:
+
+1. **Pokemon Images Dataset** - [Kaggle](https://www.kaggle.com/datasets/kvpratama/pokemon-images-dataset)
+   - 819 images
+   - PNG/JPEG pics with white background
+
+2. **Pokedex Large Images** - [GitHub](https://github.com/cristobalmitchell/pokedex/tree/main/images/large_images)
+   - PNG images of all pokemon
+
+3. **Pokemon Silhouettes** - [GitHub](https://github.com/poketwo/data/tree/master/silhouettes)
+   - 1,577 images
+   - PNG pics of pokemon AND their shaded counterparts of their silhouettes
+
+4. **Pokemon Dataset 1000** - [Kaggle](https://www.kaggle.com/datasets/noodulz/pokemon-dataset-1000)
+   - ~40 images per 1,000 Pokémon species
+   - Structured in subdirectories for each class
+   - Each image is resized to 128x128 pixels and stored as a PNG file
+
+The model will be trained on a combination of these datasets, with augmentation applied if the initial size proves insufficient.
 
 ## Evaluation
 
