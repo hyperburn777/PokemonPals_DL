@@ -1,0 +1,5 @@
+tensorflow
+imutils
+numpy
+pandas
+scikit-learn
