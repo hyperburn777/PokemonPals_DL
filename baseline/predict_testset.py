@@ -39,7 +39,7 @@ def cm_result(cm):
 
 # Path
 path_model = r'result/test.h5'
-path_test = r'dataset/PokemonTestData'
+path_test = r'data/testset'
 # Load the trained convolutional neural network
 model = load_model(path_model)
 # # Set
