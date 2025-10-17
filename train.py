@@ -75,7 +75,7 @@ history = model.fit(
     train_ds,
     validation_data=val_ds,
     epochs=EPOCHS,
-    callbacks=[ckpt, es, rlr],
+    callbacks=[ckpt, es],
     verbose=1,
 )
 
