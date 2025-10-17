@@ -67,9 +67,8 @@ Below are some examples of datasets we will use to achieve our basic functionali
 
 ### Training Datasets:
 
-1. **Pokemon Images Dataset** - [Kaggle](https://www.kaggle.com/datasets/kvpratama/pokemon-images-dataset)
-   - 819 images
-   - PNG/JPEG pics with white background
+1. **Complete Pokemon Image Dataset** - [Kaggle](https://www.kaggle.com/datasets/hlrhegemony/pokemon-image-dataset?resource=download)
+   - 2,500+ clean labeled images, all official art, for Generations 1 through 8.
 
 2. **Pokedex Large Images** - [GitHub](https://github.com/cristobalmitchell/pokedex/tree/main/images/large_images)
    - PNG images of all pokemon
