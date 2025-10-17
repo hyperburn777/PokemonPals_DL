@@ -23,6 +23,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.utils import plot_model
+import pickle
 
 from Model import CNN
 
@@ -31,8 +32,11 @@ os.environ["PATH"] += (
 )  # set Graphviz path
 
 # A little bit of data exploration
-path = r"dataset/PokemonTrainData"  # Path to directory which contains classes
+path = r"data/resized"  # Path to directory which contains classes
 classes = os.listdir(path)  # List of all classes
+
+with open("data/X_aug_y_aug.pkl", "rb") as file:
+    (X_aug, y_aug) = pickle.load(file)
 
 # Set
 # initialize the number of epochs to train for, initial learning rate,
@@ -115,7 +119,7 @@ history = model.fit(
     epochs=EPOCHS,
     verbose=1,
     callbacks=[
-        checkpoint, 
+        checkpoint,
         # early_stop
     ],
 )
