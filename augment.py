@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image_dataset_from_directory
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
 import numpy as np
+import pickle
 
 
 print(tf.config.list_physical_devices('GPU'))
@@ -60,4 +61,7 @@ for i in range(len(X)):
 X_aug = np.array(X_aug)
 y_aug = np.array(y_aug)
 
-print("Original:", X.shape, "→ Augmented:", X_aug.shape)
+with open('data/X_aug_y_aug.pkl', 'wb') as file:
+        pickle.dump((X_aug, y_aug), file)
+
+# print("Original:", X.shape, "→ Augmented:", X_aug.shape)
