@@ -84,6 +84,13 @@ Below are some examples of datasets we will use to achieve our basic functionali
 
 The model will be trained on a combination of these datasets, with augmentation applied if the initial size proves insufficient.
 
+## Quick Start
+
+To reproduce the training step, run:
+```python3 train.py```
+
+The repository is currently defaulted to train on the simple-CNN structure. To explore training on other models, 
+
 ## Evaluation
 
 Output quality and model performance will be evaluated using metrics relevant in silhouette image classification, including accuracy, precision, recall, F1-score, and confusion matrices.
