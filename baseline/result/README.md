@@ -1,1 +1,0 @@
-- The result includes model and the accuracy and loss picture.
