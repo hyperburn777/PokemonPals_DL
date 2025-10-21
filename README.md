@@ -86,6 +86,9 @@ The model will be trained on a combination of these datasets, with augmentation 
 
 ## Quick Start
 
+Download the necessary dependencies:
+```pip install -r requirements.txt`
+
 To reproduce the training step, run:
 ```python3 train.py```
 
