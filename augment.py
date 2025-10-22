@@ -59,7 +59,7 @@ for i in range(len(X)):
         X_aug.append(batch[0])
         y_aug.append(y[i])
         j += 1
-        if j >= 8:  # generate 8 augmentations per image
+        if j >= 16:  # generate 16 augmentations per image
             break
 
 X_aug = np.array(X_aug)
