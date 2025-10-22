@@ -87,7 +87,11 @@ The model will be trained on a combination of these datasets, with augmentation 
 ## Quick Start
 
 Download the necessary dependencies:
-```pip install -r requirements.txt`
+```
+pip install -r requirements.txt
+```
+
+Before training, go to this (link)[https://drive.google.com/file/d/1TVcdKHGLcEeOVd2ACCljFEBOPD5AgrBc/view?usp=sharing] and download the augmented data file essential to model training. Move the download to the project director @ `./data/`.
 
 To reproduce the training step, run:
 ```python3 train.py```
