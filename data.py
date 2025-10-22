@@ -28,7 +28,12 @@ def _normalize_to_unit(x: tf.Tensor) -> tf.Tensor:
     """Cast to float32 and scale to [0,1] if needed."""
     x = tf.cast(x, tf.float32)
     # If max > 1.5, assume [0,255] scale
-    return tf.where(tf.reduce_max(x) > 1.5, x / 255.0, x)
+    x = tf.cond(
+        tf.reduce_max(x) > 1.5,
+        lambda: x / 255.0,
+        lambda: x
+    )
+    return x
 
 
 def load_datasets(
@@ -70,25 +75,23 @@ def load_datasets(
         X_aug /= 255.0
 
     # Stratified split: ~11% of training to validation
-    X_tr, X_val, y_tr, y_val = train_test_split(
-        X_aug,
-        y_aug,
-        test_size=VAL_SPLIT,
-        stratify=y_aug,
-        shuffle=True,
-        random_state=SEED,
-    )
+    if not VAL_SPLIT:
+        X_tr = X_aug
+        y_tr = y_aug
+    else:
+        X_tr, X_val, y_tr, y_val = train_test_split(
+            X_aug,
+            y_aug,
+            test_size=VAL_SPLIT,
+            stratify=y_aug,
+            shuffle=True,
+            random_state=SEED,
+        )
 
     # Build tf.data pipelines
     train_ds = (
         tf.data.Dataset.from_tensor_slices((X_tr, y_tr))
         .shuffle(buffer_size=min(8192, len(X_tr)), seed=SEED)
-        .batch(BATCH)
-        .prefetch(AUTOTUNE)
-    )
-
-    val_ds = (
-        tf.data.Dataset.from_tensor_slices((X_val, y_val))
         .batch(BATCH)
         .prefetch(AUTOTUNE)
     )
@@ -110,10 +113,31 @@ def load_datasets(
         seed=SEED,
     )
 
+    # Create a horizontally flipped version
+    flipped_ds = test_ds.map(
+        lambda x, y: (tf.image.flip_left_right(x), y),
+        num_parallel_calls=tf.data.AUTOTUNE
+    )
+
+    # Concatenate the original and flipped datasets
+    test_ds_with_flips = test_ds.concatenate(flipped_ds)
+
+    # Prefetch for performance
+    test_ds = test_ds_with_flips.prefetch(tf.data.AUTOTUNE)
+
     # Normalize to [0,1]
     test_ds = test_ds.map(
         lambda x, y: (_normalize_to_unit(x), y), num_parallel_calls=AUTOTUNE
     ).prefetch(AUTOTUNE)
+
+    # Validation set is set to test data unless a VAL_SPLIT > 0 is specified
+    val_ds = test_ds
+    if VAL_SPLIT:
+        val_ds = (
+            tf.data.Dataset.from_tensor_slices((X_val, y_val))
+            .batch(BATCH)
+            .prefetch(AUTOTUNE)
+        )
 
     if return_class_names:
         return train_ds, val_ds, test_ds, class_names
