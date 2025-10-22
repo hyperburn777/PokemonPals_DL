@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#SBATCH --job-name=train
+#SBATCH --partition=gpu
+#SBATCH --gpus-per-task=a100:1 
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
+#SBATCH --time=12:00:00
+#SBATCH --output=logs/%x-%j.out
+#SBATCH --mail-type=END,FAIL          
+#SBATCH --mail-user=illyhoan@usc.edu
+
+module purge
+module load gcc/13.3.0 python/3.11.9
+
+cd ~/PokemonPals_DL
+python train.py
