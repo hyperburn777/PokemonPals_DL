@@ -58,13 +58,13 @@ model.compile(
 
 # ===== Callbacks =====
 ckpt = ModelCheckpoint(
-    os.path.join(RESULT_DIR, "best.h5"),
+    os.path.join(RESULT_DIR, "best.keras"),
     monitor="val_accuracy",
     save_best_only=True,
     verbose=1,
 )
 es = EarlyStopping(
-    monitor="val_accuracy", patience=3, restore_best_weights=True, verbose=1
+    monitor="val_accuracy", patience=5, restore_best_weights=True, verbose=1
 )
 rlr = ReduceLROnPlateau(
     monitor="val_loss", factor=0.5, patience=4, min_lr=1e-6, verbose=1
@@ -75,14 +75,20 @@ history = model.fit(
     train_ds,
     validation_data=val_ds,
     epochs=EPOCHS,
-    callbacks=[ckpt, es],
+    # callbacks=[ckpt, es],
+    callbacks=[ckpt],
     verbose=1,
 )
 
 plot_history(history, prefix="train")
 
 # ===== Evaluate on held-out ORIGINAL test images =====
-print("\nEvaluating on test set …")
+
+# Load the best weights
+best_model_path = os.path.join(RESULT_DIR, "best.keras")
+model = tf.keras.models.load_model(best_model_path)
+
+print("\nEvaluating on test set using best weights …")
 test_metrics = model.evaluate(test_ds, verbose=1)
 for name, val in zip(model.metrics_names, test_metrics):
     print(f"{name}: {val:.4f}")
@@ -94,8 +100,8 @@ for xb, yb in test_ds:
     y_true.extend(yb.numpy().tolist())
     y_pred.extend(np.argmax(logits, axis=1).tolist())
 
-cm = confusion_matrix(y_true, y_pred, labels=list(range(num_classes)))
-plot_confusion_matrix(cm, class_names, normalize=True, out="cm_norm.png")
+# cm = confusion_matrix(y_true, y_pred, labels=list(range(num_classes)))
+# plot_confusion_matrix(cm, class_names, normalize=True, out="cm_norm.png")
 
 save_cls_report(y_true, y_pred, class_names)
 
