@@ -1,0 +1,7 @@
+tensorflow[and-cuda]==2.16.*
+imutils
+numpy
+pandas
+scikit-learn
+opencv-python
+matplotlib
