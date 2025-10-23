@@ -13,11 +13,11 @@ VAL_SPLIT  = 0.0 # 12% of training for validation
 
 # Training
 EPOCHS = 60
-INIT_LR = 3e-4
+INIT_LR = 3e-3
 WEIGHT_DECAY = 1e-4
 LABEL_SMOOTH = 0.05
-BACKBONE = os.getenv("BACKBONE", "simple")  # or "silhouette"
+BACKBONE = os.getenv("BACKBONE", "efficientnet")  # or "silhouette"
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
-TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "200"))
+TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "20"))
 SEED = 42
