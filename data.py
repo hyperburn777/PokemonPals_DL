@@ -113,21 +113,41 @@ def load_datasets(
         seed=SEED,
     )
 
-    # Create a horizontally flipped version
+    # --- Augmentations ---
+
+    # 1. Flipped dataset
     flipped_ds = test_ds.map(
         lambda x, y: (tf.image.flip_left_right(x), y),
-        num_parallel_calls=tf.data.AUTOTUNE
+        num_parallel_calls=AUTOTUNE
     )
 
-    # Concatenate the original and flipped datasets
-    test_ds_with_flips = test_ds.concatenate(flipped_ds)
+    # 2. Rotated datasets (90°, 180°, 270°)
+    rot90_ds = test_ds.map(
+        lambda x, y: (tf.image.rot90(x, k=1), y),
+        num_parallel_calls=AUTOTUNE
+    )
+    rot180_ds = test_ds.map(
+        lambda x, y: (tf.image.rot90(x, k=2), y),
+        num_parallel_calls=AUTOTUNE
+    )
+    rot270_ds = test_ds.map(
+        lambda x, y: (tf.image.rot90(x, k=3), y),
+        num_parallel_calls=AUTOTUNE
+    )
 
-    # Prefetch for performance
-    test_ds = test_ds_with_flips.prefetch(tf.data.AUTOTUNE)
+    # --- Combine all datasets ---
+    test_ds_aug = (
+        test_ds
+        .concatenate(flipped_ds)
+        # .concatenate(rot90_ds)
+        # .concatenate(rot180_ds)
+        # .concatenate(rot270_ds)
+    )
 
-    # Normalize to [0,1]
-    test_ds = test_ds.map(
-        lambda x, y: (_normalize_to_unit(x), y), num_parallel_calls=AUTOTUNE
+    # --- Normalize and prefetch ---
+    test_ds = test_ds_aug.map(
+        lambda x, y: (_normalize_to_unit(x), y),
+        num_parallel_calls=AUTOTUNE
     ).prefetch(AUTOTUNE)
 
     # Validation set is set to test data unless a VAL_SPLIT > 0 is specified
