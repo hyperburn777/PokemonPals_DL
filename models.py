@@ -1,7 +1,17 @@
 # models.py
 import tensorflow as tf
 from tensorflow.keras import layers as L, Model
+from tensorflow.keras.applications.efficientnet import preprocess_input
 from config import IMG_SIZE, CHANNELS, TRAINABLE_AT
+
+
+# Classes for transforming input data for efficient net
+class GrayscaleToRGB(L.Layer):
+    def call(self, inputs):
+        return tf.image.grayscale_to_rgb(inputs)
+class EfficientNetPreprocess(L.Layer):
+    def call(self, inputs):
+        return preprocess_input(inputs)
 
 
 def build_simple_cnn(classes: int) -> tf.keras.Model:
@@ -36,18 +46,28 @@ def build_simple_cnn(classes: int) -> tf.keras.Model:
 def build_efficientnet(classes: int) -> tf.keras.Model:
     """1-channel → tile to 3ch → EfficientNetB0 backbone."""
     h, w = IMG_SIZE
-    inp = L.Input(shape=(h, w, CHANNELS))
-    x3 = L.Concatenate()([inp, inp, inp])  # tile grayscale to RGB
+    inp = L.Input(shape=(h, w, 1))
+    x = GrayscaleToRGB()(inp)
+    x = EfficientNetPreprocess()(x)
 
     base = tf.keras.applications.EfficientNetB0(
-        include_top=False, input_tensor=x3, pooling="avg"
+        include_top=False,
+        weights='imagenet',
+        input_shape=(h, w, 3),
+        pooling='avg'
     )
-    for i, layer in enumerate(base.layers):
-        layer.trainable = i >= TRAINABLE_AT
 
-    x = base.output
+    for layer in base.layers[:-TRAINABLE_AT]:
+        layer.trainable = False
+    for layer in base.layers[-TRAINABLE_AT:]:
+        layer.trainable = True
+
+    x = base(x)
     x = L.Dropout(0.3)(x)
     out = L.Dense(classes, activation="softmax")(x)
+
+    print(f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}")
+
     return Model(inp, out, name="EfficientNetB0_silhouette")
 
 
