@@ -38,11 +38,18 @@ model.summary()
 # ===== Optimizer & Loss =====
 # Cosine schedule with restarts
 steps_per_epoch = sum(1 for _ in train_ds)
-cosine = tf.keras.optimizers.schedules.CosineDecayRestarts(
+# cosine = tf.keras.optimizers.schedules.CosineDecayRestarts(
+#     initial_learning_rate=INIT_LR,
+#     first_decay_steps=steps_per_epoch * 10,
+#     t_mul=2.0,
+#     m_mul=0.8,
+#     alpha=1e-2,
+# )
+
+# Cosine schedule w/o restarts
+cosine = tf.keras.optimizers.schedules.CosineDecay(
     initial_learning_rate=INIT_LR,
-    first_decay_steps=steps_per_epoch * 10,
-    t_mul=2.0,
-    m_mul=0.8,
+    decay_steps=steps_per_epoch * EPOCHS,
     alpha=1e-2,
 )
 opt = AdamW(learning_rate=cosine, weight_decay=WEIGHT_DECAY)
