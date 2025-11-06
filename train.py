@@ -19,6 +19,8 @@ from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn
 from utils import plot_history, plot_confusion_matrix, save_cls_report
 
 os.makedirs(RESULT_DIR, exist_ok=True)
+np.random.seed(SEED)
+tf.random.set_seed(SEED)
 tf.keras.utils.set_random_seed(SEED)
 
 # ===== Data =====
