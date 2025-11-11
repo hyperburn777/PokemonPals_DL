@@ -4,6 +4,5 @@ venv/
 .venv/
 env/
 .DS_Store
-data/X_aug_y_aug.pkl
 __pycache__
 logs
