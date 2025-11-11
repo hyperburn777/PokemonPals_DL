@@ -1,20 +1,20 @@
-# models.py
 import tensorflow as tf
 from tensorflow.keras import layers as L, Model
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from config import IMG_SIZE, CHANNELS, TRAINABLE_AT
 
 
-# Classes for transforming input data for efficient net
 class GrayscaleToRGB(L.Layer):
     def call(self, inputs):
         return tf.image.grayscale_to_rgb(inputs)
+
+
 class EfficientNetPreprocess(L.Layer):
     def call(self, inputs):
         return preprocess_input(inputs)
 
 
-def build_simple_cnn(classes: int) -> tf.keras.Model:
+def build_simple_cnn(classes):
     """Baseline CNN for silhouettes (lightweight & fast)."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, CHANNELS))
@@ -43,7 +43,7 @@ def build_simple_cnn(classes: int) -> tf.keras.Model:
     return Model(inp, out, name="SimpleCNN")
 
 
-def build_efficientnet(classes: int) -> tf.keras.Model:
+def build_efficientnet(classes):
     """1-channel → tile to 3ch → EfficientNetB0 backbone."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, 1))
@@ -51,10 +51,7 @@ def build_efficientnet(classes: int) -> tf.keras.Model:
     x = EfficientNetPreprocess()(x)
 
     base = tf.keras.applications.EfficientNetB0(
-        include_top=False,
-        weights='imagenet',
-        input_shape=(h, w, 3),
-        pooling='avg'
+        include_top=False, weights="imagenet", input_shape=(h, w, 3), pooling="avg"
     )
 
     for layer in base.layers[:-TRAINABLE_AT]:
@@ -66,7 +63,9 @@ def build_efficientnet(classes: int) -> tf.keras.Model:
     x = L.Dropout(0.3)(x)
     out = L.Dense(classes, activation="softmax")(x)
 
-    print(f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}")
+    print(
+        f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
+    )
 
     return Model(inp, out, name="EfficientNetB0_silhouette")
 
@@ -85,7 +84,7 @@ def _se_block(x, r=8):
     return L.Multiply()([x, L.Reshape((1, 1, f))(s)])
 
 
-def build_silhouette_cnn(classes: int) -> tf.keras.Model:
+def build_silhouette_cnn(classes):
     """Compact CNN tailored for shape recognition."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, CHANNELS))

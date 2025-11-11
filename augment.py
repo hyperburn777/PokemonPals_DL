@@ -1,42 +1,26 @@
-import tensorflow as tf
 from tensorflow.keras.preprocessing import image_dataset_from_directory
-from tensorflow.keras.preprocessing.image import (
-    ImageDataGenerator,
-    img_to_array,
-    load_img,
-)
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import pickle
 
 
-print(tf.config.list_physical_devices("GPU"))
+# print(tf.config.list_physical_devices("GPU"))
 
-# Path to your main folder
-data_dir = "data/testset"
+DATA = "data/testset"
 
-# Create dataset
 dataset = image_dataset_from_directory(
-    data_dir,
-    image_size=(128, 128),  # resize all images
-    batch_size=None,  # if you want to get all images in memory
-    label_mode="int",  # or "categorical" / "binary" / None
+    DATA,
+    image_size=(128, 128),  # resize
+    batch_size=None,
+    label_mode="int",
     color_mode="grayscale",
 )
 
-# Extract X (images) and y (labels)
-X = []
-y = []
-
-for img, label in dataset:
-    X.append(img.numpy())
-    y.append(label.numpy())
-
-X = np.array(X)
-y = np.array(y)
+X = np.array([img for img, _ in dataset])
+y = np.array([label for _, label in dataset])
 
 print(X.shape, y.shape)
 
-# Create an ImageDataGenerator with desired augmentations
 datagen = ImageDataGenerator(
     rotation_range=30,  # random rotation
     width_shift_range=0.1,  # horizontal shift
@@ -47,7 +31,6 @@ datagen = ImageDataGenerator(
     fill_mode="nearest",
 )
 
-# Lists to store augmented images and labels
 X_aug, y_aug = [], []
 
 # Loop over each image in X

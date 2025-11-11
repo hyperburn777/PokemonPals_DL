@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, classification_report
 import itertools
-from config import RESULT_DIR
+from config import RESULT_DIR, BACKBONE
 
 os.makedirs(RESULT_DIR, exist_ok=True)
 
@@ -17,7 +17,7 @@ def plot_history(h, prefix="train"):
     plt.xlabel("epoch")
     plt.ylabel("accuracy")
     plt.title("Accuracy")
-    plt.savefig(os.path.join(RESULT_DIR, f"{prefix}_acc.png"))
+    plt.savefig(os.path.join(RESULT_DIR, f"{BACKBONE}/{prefix}_acc.png"))
     plt.close()
 
     plt.figure()
@@ -28,7 +28,7 @@ def plot_history(h, prefix="train"):
     plt.xlabel("epoch")
     plt.ylabel("loss")
     plt.title("Loss")
-    plt.savefig(os.path.join(RESULT_DIR, f"{prefix}_loss.png"))
+    plt.savefig(os.path.join(RESULT_DIR, f"{BACKBONE}/{prefix}_loss.png"))
     plt.close()
 
 
@@ -62,12 +62,12 @@ def plot_confusion_matrix(
     plt.ylabel("True label")
     plt.xlabel("Predicted label")
     plt.tight_layout()
-    plt.savefig(os.path.join(RESULT_DIR, out))
+    plt.savefig(os.path.join(RESULT_DIR, f"{BACKBONE}/{out}"))
     plt.close()
 
 
 def save_cls_report(y_true, y_pred, class_names):
     rep = classification_report(y_true, y_pred, target_names=class_names, digits=4)
-    with open(os.path.join(RESULT_DIR, "classification_report.txt"), "w") as f:
+    with open(os.path.join(RESULT_DIR, f"{BACKBONE}/class_report.txt"), "w") as f:
         f.write(rep)
     print(rep)
