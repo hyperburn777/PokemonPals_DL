@@ -2,25 +2,35 @@ import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from config import TEST_DIR, IMG_SIZE, CHANNELS, BATCH, VAL_SPLIT, SEED, TRAIN_SIZE
+from config import (
+    RESULT_DIR,
+    TEST_DIR,
+    IMG_SIZE,
+    CHANNELS,
+    BATCH,
+    VAL_SPLIT,
+    SEED,
+    TRAIN_SIZE,
+)
 
 AUTOTUNE = tf.data.AUTOTUNE
+os.makedirs(RESULT_DIR, exist_ok=True)
 
 rot_layer = tf.keras.layers.RandomRotation(
     factor=0.1,
     fill_mode="constant",
-    fill_value=1.0,
+    fill_value=0.0,
 )  # ±10% of 2π (~±36°)
 trans_layer = tf.keras.layers.RandomTranslation(
     height_factor=0.1,
     width_factor=0.1,
     fill_mode="constant",
-    fill_value=1.0,
+    fill_value=0.0,
 )  # up to 10% shift
 zoom_layer = tf.keras.layers.RandomZoom(
     (-0.1, 0.1),
     fill_mode="constant",
-    fill_value=1.0,
+    fill_value=0.0,
 )
 
 
@@ -58,7 +68,7 @@ def create_augmented_dataset(test_ds, augmentations_per_image=1):
 
     # Apply augmentation and normalization
     ds_augmented = ds_repeated.map(
-        lambda x, y: (1.0 - _normalize_to_unit(_augment_image(x)), y),
+        lambda x, y: (_normalize_to_unit(_augment_image(x)), y),
         num_parallel_calls=AUTOTUNE,
     )
 
@@ -169,7 +179,7 @@ if __name__ == "__main__":
             )
             plt.title(f"Label: {labels[i].numpy()}")
             plt.axis("off")
-        plt.savefig(f"train_samples.png")
+        plt.savefig(os.path.join(RESULT_DIR, "train_samples.png"))
         plt.close()
 
     for images, labels in test_ds.take(1):
@@ -183,6 +193,6 @@ if __name__ == "__main__":
             )
             plt.title(f"Label: {labels[i].numpy()}")
             plt.axis("off")
-        plt.savefig(f"test_samples.png")
+        plt.savefig(os.path.join(RESULT_DIR, "test_samples.png"))
         plt.close()
     ### Samples → train: 22379, val: 3197, test: 3197 @ 12% validation split
