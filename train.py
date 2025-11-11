@@ -95,4 +95,4 @@ for xb, yb in test_ds:
 
 save_cls_report(y_true, y_pred, class_names)
 
-model.save(os.path.join(RESULT_DIR, f"{BACKBONE}/final_model.keras"))
+model.save(os.path.join(RESULT_DIR, f"final_model.keras"))
