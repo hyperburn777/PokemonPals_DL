@@ -23,14 +23,12 @@ np.random.seed(SEED)
 tf.random.set_seed(SEED)
 tf.keras.utils.set_random_seed(SEED)
 
-# ===== Data =====
 train_ds, val_ds, test_ds, class_names = load_datasets(return_class_names=True)
 num_classes = len(class_names)
 
-# ===== Model =====
-if BACKBONE.lower() == "efficientnet":
+if BACKBONE.lower() == "effnet":
     model = build_efficientnet(num_classes)
-elif BACKBONE.lower() == "simple":
+elif BACKBONE.lower() == "baseline":
     model = build_simple_cnn(num_classes)
 else:
     model = build_silhouette_cnn(num_classes)
@@ -67,7 +65,6 @@ rlr = ReduceLROnPlateau(
     monitor="val_loss", factor=0.5, patience=4, min_lr=1e-6, verbose=1
 )
 
-# ===== Train =====
 history = model.fit(
     train_ds,
     validation_data=val_ds,
@@ -79,9 +76,6 @@ history = model.fit(
 
 plot_history(history, prefix="train")
 
-# ===== Evaluate on held-out ORIGINAL test images =====
-
-# Load the best weights
 best_model_path = os.path.join(RESULT_DIR, "best.keras")
 model = tf.keras.models.load_model(best_model_path)
 
@@ -90,7 +84,6 @@ test_metrics = model.evaluate(test_ds, verbose=1)
 for name, val in zip(model.metrics_names, test_metrics):
     print(f"{name}: {val:.4f}")
 
-# Predictions & confusion matrix
 y_true, y_pred = [], []
 for xb, yb in test_ds:
     logits = model.predict(xb, verbose=0)
@@ -102,6 +95,4 @@ for xb, yb in test_ds:
 
 save_cls_report(y_true, y_pred, class_names)
 
-# Save final model
-model.save(os.path.join(RESULT_DIR, "final_model.keras"))
-
+model.save(os.path.join(RESULT_DIR, f"{BACKBONE}/final_model.keras"))
