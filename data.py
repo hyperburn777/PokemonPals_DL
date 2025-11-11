@@ -58,7 +58,7 @@ def create_augmented_dataset(test_ds, augmentations_per_image=1):
 
     # Apply augmentation and normalization
     ds_augmented = ds_repeated.map(
-        lambda x, y: (_normalize_to_unit(_augment_image(x)), y),
+        lambda x, y: (1.0 - _normalize_to_unit(_augment_image(x)), y),
         num_parallel_calls=AUTOTUNE,
     )
 
@@ -130,7 +130,7 @@ def load_datasets(
     test_ds_aug = test_ds.concatenate(flipped_ds)
 
     test_ds = test_ds_aug.map(
-        lambda x, y: (_normalize_to_unit(x), y), num_parallel_calls=AUTOTUNE
+        lambda x, y: (1.0 - _normalize_to_unit(x), y), num_parallel_calls=AUTOTUNE
     ).prefetch(AUTOTUNE)
 
     aug_ds = create_augmented_dataset(test_ds, augmentations_per_image=TRAIN_SIZE)
