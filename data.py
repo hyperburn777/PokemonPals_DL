@@ -148,23 +148,9 @@ def load_datasets(
 
     # --- Augmentations ---
 
-    # 1. Flipped dataset
+    # Flipped dataset
     flipped_ds = test_ds.map(
         lambda x, y: (tf.image.flip_left_right(x), y),
-        num_parallel_calls=AUTOTUNE
-    )
-
-    # 2. Rotated datasets (90°, 180°, 270°) currently not used
-    rot90_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=1), y),
-        num_parallel_calls=AUTOTUNE
-    )
-    rot180_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=2), y),
-        num_parallel_calls=AUTOTUNE
-    )
-    rot270_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=3), y),
         num_parallel_calls=AUTOTUNE
     )
 
@@ -172,9 +158,6 @@ def load_datasets(
     test_ds_aug = (
         test_ds
         .concatenate(flipped_ds)
-        # .concatenate(rot90_ds)
-        # .concatenate(rot180_ds)
-        # .concatenate(rot270_ds)
     )
 
     # --- Normalize and prefetch ---
