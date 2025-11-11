@@ -1,10 +1,12 @@
 import os
-import pickle
+import math
 from typing import Tuple, List, Union
 
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+
+import matplotlib.pyplot as plt
 
 from config import (
     AUG_PKL_PATH,
@@ -14,9 +16,85 @@ from config import (
     BATCH,
     VAL_SPLIT,
     SEED,
+    TRAIN_SIZE
 )
 
 AUTOTUNE = tf.data.AUTOTUNE
+
+rot_layer = tf.keras.layers.RandomRotation(
+    factor=0.1,
+    fill_mode='constant',
+    fill_value=1.0,
+)  # ±10% of 2π (~±36°)
+trans_layer = tf.keras.layers.RandomTranslation(
+    height_factor=0.1, width_factor=0.1,
+    fill_mode='constant',
+    fill_value=1.0,
+)  # up to 10% shift
+zoom_layer = tf.keras.layers.RandomZoom(
+    (-0.1, 0.1),
+    fill_mode='constant',
+    fill_value=1.0,
+)
+def _augment_image(image, max_attempts=5):
+    """
+    Applies random augmentations to a single image tensor without using tf-addons.
+
+    Args:
+        image (tf.Tensor): input image
+        max_attempts (int): maximum recursive attempts to avoid infinite recursion
+
+    Returns:
+        tf.Tensor: augmented image
+    """
+    image = tf.ensure_shape(image, [None, None, None, CHANNELS])
+    original = image
+    
+    # --- Random rotation ---
+    image = rot_layer(image)
+    # --- Random translation ---
+    image = trans_layer(image)
+    # --- Random zoom ---
+    image = zoom_layer(image)
+
+    # Check if the augmented image is identical to the original
+    if tf.reduce_max(tf.abs(image - original)) < 1e-6:
+        if max_attempts > 0:
+            return _augment_image(original, max_attempts=max_attempts-1)
+        else:
+            return image
+
+    return image
+
+
+def create_augmented_dataset(test_ds, augmentations_per_image=1):
+    # Repeat dataset for each augmentation
+    ds_repeated = test_ds.repeat(augmentations_per_image)
+
+    # Apply augmentation and normalization
+    ds_augmented = ds_repeated.map(
+        lambda x, y: (_normalize_to_unit(_augment_image(x)), y),
+        num_parallel_calls=AUTOTUNE
+    )
+
+    # Prefetch for pipeline performance
+    ds_augmented = ds_augmented.prefetch(AUTOTUNE)
+    
+    return ds_augmented
+
+
+def split_dataset(dataset, val_fraction=0.2):
+    # Count total elements
+    total_count = dataset.cardinality().numpy()
+    if total_count == tf.data.INFINITE_CARDINALITY:
+        raise ValueError("Dataset has infinite cardinality; please batch/limit it first.")
+    
+    val_size = int(total_count * val_fraction)
+    
+    val_ds = dataset.take(val_size)
+    train_ds = dataset.skip(val_size)
+    
+    return train_ds, val_ds
 
 
 def _sorted_subdirs(root: str) -> List[str]:
@@ -28,7 +106,12 @@ def _normalize_to_unit(x: tf.Tensor) -> tf.Tensor:
     """Cast to float32 and scale to [0,1] if needed."""
     x = tf.cast(x, tf.float32)
     # If max > 1.5, assume [0,255] scale
-    return tf.where(tf.reduce_max(x) > 1.5, x / 255.0, x)
+    x = tf.cond(
+        tf.reduce_max(x) > 1.5,
+        lambda: x / 255.0,
+        lambda: x
+    )
+    return x
 
 
 def load_datasets(
@@ -39,62 +122,15 @@ def load_datasets(
 ]:
     """
     Loads:
-      - train/val from augmented pickle (with ~11% of training held out for validation)
       - test from TEST_DIR originals (folder-per-class)
+      - train/val from augmenting test
 
     Returns:
       train_ds, val_ds, test_ds
       (+ class_names if return_class_names=True)
     """
     # -------------------------------
-    # 1) TRAIN/VAL from pickle
-    # -------------------------------
-    with open(AUG_PKL_PATH, "rb") as f:
-        X_aug, y_aug = pickle.load(f)
-
-    # Sanity checks
-    assert X_aug.ndim == 4, f"Expected X_aug to be 4D (N,H,W,C), got {X_aug.shape}"
-    h, w = IMG_SIZE
-    assert X_aug.shape[1:3] == (
-        h,
-        w,
-    ), f"X_aug spatial shape {X_aug.shape[1:3]} != {IMG_SIZE}"
-    assert (
-        X_aug.shape[-1] == CHANNELS
-    ), f"X_aug channels {X_aug.shape[-1]} != {CHANNELS}"
-    assert y_aug.ndim == 1, f"Expected y_aug to be 1D int labels, got {y_aug.shape}"
-
-    # Normalize to [0,1]
-    X_aug = X_aug.astype("float32")
-    if X_aug.max() > 1.5:
-        X_aug /= 255.0
-
-    # Stratified split: ~11% of training to validation
-    X_tr, X_val, y_tr, y_val = train_test_split(
-        X_aug,
-        y_aug,
-        test_size=VAL_SPLIT,
-        stratify=y_aug,
-        shuffle=True,
-        random_state=SEED,
-    )
-
-    # Build tf.data pipelines
-    train_ds = (
-        tf.data.Dataset.from_tensor_slices((X_tr, y_tr))
-        .shuffle(buffer_size=min(8192, len(X_tr)), seed=SEED)
-        .batch(BATCH)
-        .prefetch(AUTOTUNE)
-    )
-
-    val_ds = (
-        tf.data.Dataset.from_tensor_slices((X_val, y_val))
-        .batch(BATCH)
-        .prefetch(AUTOTUNE)
-    )
-
-    # -------------------------------
-    # 2) TEST from originals on disk
+    # 1) TEST from originals on disk
     # -------------------------------
     color_mode = "grayscale" if CHANNELS == 1 else "rgb"
     class_names = _sorted_subdirs(TEST_DIR)
@@ -110,10 +146,38 @@ def load_datasets(
         seed=SEED,
     )
 
-    # Normalize to [0,1]
-    test_ds = test_ds.map(
-        lambda x, y: (_normalize_to_unit(x), y), num_parallel_calls=AUTOTUNE
+    # --- Augmentations ---
+
+    # Flipped dataset
+    flipped_ds = test_ds.map(
+        lambda x, y: (tf.image.flip_left_right(x), y),
+        num_parallel_calls=AUTOTUNE
+    )
+
+    # --- Combine all datasets ---
+    test_ds_aug = (
+        test_ds
+        .concatenate(flipped_ds)
+    )
+
+    # --- Normalize and prefetch ---
+    test_ds = test_ds_aug.map(
+        lambda x, y: (_normalize_to_unit(x), y),
+        num_parallel_calls=AUTOTUNE
     ).prefetch(AUTOTUNE)
+
+    # -------------------------------
+    # 2) TRAIN/VAL as augmented test 
+    # -------------------------------
+    aug_ds = create_augmented_dataset(test_ds, augmentations_per_image=TRAIN_SIZE)
+    aug_ds = aug_ds.shuffle(buffer_size=len(aug_ds))
+
+    # Validation set is set to test data unless a VAL_SPLIT > 0 is specified
+    val_ds = test_ds
+    if VAL_SPLIT:
+        train_ds, val_ds = split_dataset(aug_ds, val_fraction=VAL_SPLIT)
+    else:
+        train_ds, val_ds = aug_ds, test_ds
 
     if return_class_names:
         return train_ds, val_ds, test_ds, class_names
@@ -130,4 +194,26 @@ if __name__ == "__main__":
         f"Classes: {len(class_names)} → {class_names[:5]}{' …' if len(class_names) > 5 else ''}"
     )
     print(f"Samples → train: {n_train}, val: {n_val}, test: {n_test}")
+
+    for images, labels in train_ds.take(1):
+        # Plot first 9 images
+        plt.figure(figsize=(10, 10))
+        for i in range(9):
+            ax = plt.subplot(3, 3, i + 1)
+            plt.imshow(images[i].numpy().squeeze(), cmap="gray" if images.shape[-1] == 1 else None)
+            plt.title(f"Label: {labels[i].numpy()}")
+            plt.axis("off")
+        plt.savefig(f"train_samples.png")
+        plt.close()
+
+    for images, labels in test_ds.take(1):
+        # Plot first 9 images
+        plt.figure(figsize=(10, 10))
+        for i in range(9):
+            ax = plt.subplot(3, 3, i + 1)
+            plt.imshow(images[i].numpy().squeeze(), cmap="gray" if images.shape[-1] == 1 else None)
+            plt.title(f"Label: {labels[i].numpy()}")
+            plt.axis("off")
+        plt.savefig(f"test_samples.png")
+        plt.close()
     ### Samples → train: 22379, val: 3197, test: 3197 @ 12% validation split
