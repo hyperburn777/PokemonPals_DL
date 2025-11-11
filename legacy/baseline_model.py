@@ -1,5 +1,4 @@
-# Model
-# import the necessary packages
+###     LEGACY MODEL   ###
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import (
     BatchNormalization,
