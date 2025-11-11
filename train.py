@@ -37,18 +37,7 @@ else:
 
 model.summary()
 
-# ===== Optimizer & Loss =====
-# Cosine schedule with restarts
 steps_per_epoch = sum(1 for _ in train_ds)
-# cosine = tf.keras.optimizers.schedules.CosineDecayRestarts(
-#     initial_learning_rate=INIT_LR,
-#     first_decay_steps=steps_per_epoch * 10,
-#     t_mul=2.0,
-#     m_mul=0.8,
-#     alpha=1e-2,
-# )
-
-# Cosine schedule w/o restarts
 cosine = tf.keras.optimizers.schedules.CosineDecay(
     initial_learning_rate=INIT_LR,
     decay_steps=steps_per_epoch * EPOCHS,
@@ -65,7 +54,6 @@ model.compile(
     ],
 )
 
-# ===== Callbacks =====
 ckpt = ModelCheckpoint(
     os.path.join(RESULT_DIR, "best.keras"),
     monitor="val_accuracy",
@@ -116,3 +104,4 @@ save_cls_report(y_true, y_pred, class_names)
 
 # Save final model
 model.save(os.path.join(RESULT_DIR, "final_model.keras"))
+
