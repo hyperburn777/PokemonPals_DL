@@ -1,4 +1,7 @@
 import os
+import argparse
+
+parser = argparse.ArgumentParser()
 
 # Data
 IMG_SIZE = (128, 128)
@@ -12,7 +15,10 @@ EPOCHS = 60
 INIT_LR = 3e-4
 WEIGHT_DECAY = 1e-4
 LABEL_SMOOTH = 0.05
-BACKBONE = os.getenv("BACKBONE", "baseline")  # or "silhouette" or "effnet"
+# BACKBONE = os.getenv("BACKBONE", "baseline")  
+parser.add_argument("--BACKBONE", type=str, default="baseline", help="Model backbone to use.") # or "silhouette" or "effnet"
+args = parser.parse_args()
+BACKBONE = args.BACKBONE.lower()
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
 TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "175"))
