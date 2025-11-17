@@ -18,8 +18,12 @@ LABEL_SMOOTH = 0.05
 parser.add_argument(
     "--BACKBONE", type=str, default="baseline", help="Model backbone to use."
 )  # or "silhouette" or "effnet"
+parser.add_argument(
+    "--MODEL", type=str, default="b0", help="EfficientNet backbone to use."
+)  # or "silhouette" or "effnet"
 args = parser.parse_args()
 BACKBONE = args.BACKBONE.lower()
+MODEL = args.MODEL.lower()
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
 TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "175"))
@@ -27,4 +31,4 @@ SEED = 42
 
 # Paths
 TEST_DIR = os.getenv("TEST_DIR", "data/testset")
-RESULT_DIR = os.getenv("RESULT_DIR", f"result/{BACKBONE}")
+RESULT_DIR = "result/{BACKBONE}" if not BACKBONE == "effnet" else f"result/effnet_{MODEL}"

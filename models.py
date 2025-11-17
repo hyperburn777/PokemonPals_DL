@@ -1,6 +1,16 @@
 import tensorflow as tf
 from tensorflow.keras import layers as L, Model
 from tensorflow.keras.applications.efficientnet import preprocess_input
+from tensorflow.keras.applications import (
+    EfficientNetB0,
+    EfficientNetB1,
+    EfficientNetB2,
+    EfficientNetB3,
+    EfficientNetB4,
+    EfficientNetB5,
+    EfficientNetB6,
+    EfficientNetB7,
+)
 from config import IMG_SIZE, CHANNELS, TRAINABLE_AT
 
 
@@ -43,16 +53,35 @@ def build_simple_cnn(classes):
     return Model(inp, out, name="baseline")
 
 
-def build_efficientnet(classes):
+def build_efficientnet(classes, model):
     """1-channel → tile to 3ch → EfficientNetB0 backbone."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, 1))
     x = GrayscaleToRGB()(inp)
     x = EfficientNetPreprocess()(x)
+    params = {
+        "include_top": False,
+        "weights": "imagenet",
+        "input_shape": (h, w, 3),
+        "pooling": "avg",
+    }
 
-    base = tf.keras.applications.EfficientNetB1(
-        include_top=False, weights="imagenet", input_shape=(h, w, 3), pooling="avg"
-    )
+    if model == "b1":
+        base = EfficientNetB1(**params)
+    elif model == "b2":
+        base = EfficientNetB2(**params)
+    elif model == "b3":
+        base = EfficientNetB3(**params)
+    elif model == "b4":
+        base = EfficientNetB4(**params)
+    elif model == "b5":
+        base = EfficientNetB5(**params)
+    elif model == "b6":
+        base = EfficientNetB6(**params)
+    elif model == "b7":
+        base = EfficientNetB7(**params)
+    else:
+        base = EfficientNetB0(**params)
 
     for layer in base.layers[:-TRAINABLE_AT]:
         layer.trainable = False
@@ -67,7 +96,7 @@ def build_efficientnet(classes):
         f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
     )
 
-    return Model(inp, out, name="effnet")
+    return Model(inp, out, name="effnet" + model.lower())
 
 
 def _sepconv(x, f, k=3):

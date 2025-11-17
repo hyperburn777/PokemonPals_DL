@@ -11,6 +11,7 @@ from config import (
     EPOCHS,
     BACKBONE,
     SEED,
+    MODEL
 )
 from data import load_datasets
 from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn
@@ -25,7 +26,7 @@ train_ds, val_ds, test_ds, class_names = load_datasets(return_class_names=True)
 num_classes = len(class_names)
 
 if BACKBONE.lower() == "effnet":
-    model = build_efficientnet(num_classes)
+    model = build_efficientnet(num_classes, model=MODEL)
 elif BACKBONE.lower() == "baseline":
     model = build_simple_cnn(num_classes)
 else:
