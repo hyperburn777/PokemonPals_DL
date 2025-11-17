@@ -3,20 +3,18 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import AdamW
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from sklearn.metrics import confusion_matrix
 
 from config import (
     RESULT_DIR,
     INIT_LR,
     WEIGHT_DECAY,
-    LABEL_SMOOTH,
     EPOCHS,
     BACKBONE,
     SEED,
 )
 from data import load_datasets
 from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn
-from utils import plot_history, plot_confusion_matrix, save_cls_report
+from utils import plot_history, save_cls_report
 
 os.makedirs(RESULT_DIR, exist_ok=True)
 np.random.seed(SEED)
@@ -95,4 +93,4 @@ for xb, yb in test_ds:
 
 save_cls_report(y_true, y_pred, class_names)
 
-model.save(os.path.join(RESULT_DIR, f"{BACKBONE}/final_model.keras"))
+model.save(os.path.join(RESULT_DIR, f"final_model.keras"))

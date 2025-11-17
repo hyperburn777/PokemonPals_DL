@@ -40,7 +40,7 @@ def build_simple_cnn(classes):
     x = L.Dropout(0.3)(x)
 
     out = L.Dense(classes, activation="softmax")(x)
-    return Model(inp, out, name="SimpleCNN")
+    return Model(inp, out, name="baseline")
 
 
 def build_efficientnet(classes):
@@ -67,7 +67,7 @@ def build_efficientnet(classes):
         f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
     )
 
-    return Model(inp, out, name="EfficientNetB0_silhouette")
+    return Model(inp, out, name="effnet")
 
 
 def _sepconv(x, f, k=3):
