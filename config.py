@@ -1,24 +1,30 @@
 import os
+import argparse
 
-# Paths
-AUG_PKL_PATH = os.getenv("AUG_PKL_PATH", "data/X_aug_y_aug.pkl")
-TEST_DIR = os.getenv("TEST_DIR", "data/testset")
-RESULT_DIR = os.getenv("RESULT_DIR", "result")
+parser = argparse.ArgumentParser()
 
 # Data
 IMG_SIZE = (128, 128)
 CHANNELS = 1
 BATCH = 64
-TRAIN_SIZE = 8 # number of training data per test image (before train/validation split)
-VAL_SPLIT  = 0.0 # in range of 0-1
+TRAIN_SIZE = 8  # number of training data per test image (before train/validation split)
+VAL_SPLIT = 0.0  # in range of 0-1
 
 # Training
 EPOCHS = 60
 INIT_LR = 3e-4
 WEIGHT_DECAY = 1e-4
 LABEL_SMOOTH = 0.05
-BACKBONE = os.getenv("BACKBONE", "efficientnet")  # or "silhouette" or "effnet"
+parser.add_argument(
+    "--BACKBONE", type=str, default="baseline", help="Model backbone to use."
+)  # or "silhouette" or "effnet"
+args = parser.parse_args()
+BACKBONE = args.BACKBONE.lower()
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
 TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "175"))
 SEED = 42
+
+# Paths
+TEST_DIR = os.getenv("TEST_DIR", "data/testset")
+RESULT_DIR = os.getenv("RESULT_DIR", f"result/{BACKBONE}")
