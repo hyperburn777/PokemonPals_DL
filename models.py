@@ -50,7 +50,7 @@ def build_efficientnet(classes):
     x = GrayscaleToRGB()(inp)
     x = EfficientNetPreprocess()(x)
 
-    base = tf.keras.applications.EfficientNetB0(
+    base = tf.keras.applications.EfficientNetB1(
         include_top=False, weights="imagenet", input_shape=(h, w, 3), pooling="avg"
     )
 
