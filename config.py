@@ -25,6 +25,5 @@ TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "175"))
 SEED = 42
 
 # Paths
-AUG_PKL_PATH = os.getenv("AUG_PKL_PATH", "data/X_aug_y_aug.pkl")
 TEST_DIR = os.getenv("TEST_DIR", "data/testset")
 RESULT_DIR = os.getenv("RESULT_DIR", f"result/{BACKBONE}")
