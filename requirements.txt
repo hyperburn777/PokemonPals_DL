@@ -1,7 +1,9 @@
 tensorflow[and-cuda]==2.16.*
+keras==3.8.0
 imutils
 numpy
 pandas
 scikit-learn
 opencv-python
 matplotlib
+scipy
