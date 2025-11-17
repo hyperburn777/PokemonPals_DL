@@ -50,7 +50,7 @@ def build_efficientnet(classes):
     x = GrayscaleToRGB()(inp)
     x = EfficientNetPreprocess()(x)
 
-    base = tf.keras.applications.EfficientNetB0(
+    base = tf.keras.applications.EfficientNetB1(
         include_top=False, weights="imagenet", input_shape=(h, w, 3), pooling="avg"
     )
 
@@ -67,7 +67,7 @@ def build_efficientnet(classes):
         f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
     )
 
-    return Model(inp, out, name="EfficientNetB0_silhouette")
+    return Model(inp, out, name="effnetb1")
 
 
 def _sepconv(x, f, k=3):
