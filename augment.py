@@ -42,7 +42,7 @@ datagen = ImageDataGenerator(
     width_shift_range=0.1,  # horizontal shift
     height_shift_range=0.1,  # vertical shift
     zoom_range=0.2,  # zoom in/out
-    shear_range=10,  # shearing
+    # shear_range=10,  # shearing
     horizontal_flip=True,  # random horizontal flip
     fill_mode="nearest",
 )

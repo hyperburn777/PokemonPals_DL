@@ -114,6 +114,45 @@ def _normalize_to_unit(x: tf.Tensor) -> tf.Tensor:
     return x
 
 
+def _replace_black(image, min_shade=0.0, max_shade=0.5):
+    # Ensure float32
+    image = tf.image.convert_image_dtype(image, tf.float32)
+    
+    # Create a mask of "black" pixels
+    mask = tf.less_equal(image, 0.5)
+    
+    # Generate random shades in the desired range
+    random_shades = tf.random.uniform(
+        shape=tf.shape(image),
+        minval=min_shade,
+        maxval=max_shade,
+        dtype=tf.float32
+    )
+    
+    # Replace only black pixels with the random shades
+    new_image = tf.where(mask, random_shades, image)
+    
+    return new_image
+
+
+def _replace_black_solid(image, shade):
+    # Ensure float32
+    image = tf.image.convert_image_dtype(image, tf.float32)
+
+    # Create mask of "black" pixels (all channels ≤ 0.5)
+    mask = tf.less_equal(image, 0.5)
+
+    # Convert color to tensor and broadcast to image shape
+    shade = tf.convert_to_tensor(shade, dtype=tf.float32)
+    shade = tf.reshape(shade, [1, 1, -1])   # e.g. [1,1,3]
+    color_broadcast = tf.ones_like(image) * shade
+
+    # Replace black pixels with the solid color
+    new_image = tf.where(mask, color_broadcast, image)
+
+    return new_image
+
+
 def load_datasets(
     return_class_names: bool = False,
 ) -> Union[
@@ -148,25 +187,12 @@ def load_datasets(
 
     # --- Augmentations ---
 
-    # 1. Flipped dataset
+    # Flipped dataset
     flipped_ds = test_ds.map(
         lambda x, y: (tf.image.flip_left_right(x), y),
         num_parallel_calls=AUTOTUNE
     )
-
-    # 2. Rotated datasets (90°, 180°, 270°) currently not used
-    rot90_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=1), y),
-        num_parallel_calls=AUTOTUNE
-    )
-    rot180_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=2), y),
-        num_parallel_calls=AUTOTUNE
-    )
-    rot270_ds = test_ds.map(
-        lambda x, y: (tf.image.rot90(x, k=3), y),
-        num_parallel_calls=AUTOTUNE
-    )
+    # The testing dataset contains the original images + their mirrored versions
 
     # --- Combine all datasets ---
     test_ds_aug = (
@@ -188,6 +214,12 @@ def load_datasets(
     # -------------------------------
     aug_ds = create_augmented_dataset(test_ds, augmentations_per_image=TRAIN_SIZE)
     aug_ds = aug_ds.shuffle(buffer_size=len(aug_ds))
+
+    # Augment test_ds separately
+    test_ds = test_ds.map(
+        lambda x, y: (_replace_black_solid(x, 0.6), y),
+        num_parallel_calls=AUTOTUNE
+    ).prefetch(AUTOTUNE)
 
     # Validation set is set to test data unless a VAL_SPLIT > 0 is specified
     val_ds = test_ds
