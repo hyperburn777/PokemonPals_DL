@@ -70,6 +70,43 @@ def build_efficientnet(classes):
     return Model(inp, out, name="effnet")
 
 
+def build_resnet(classes):
+    """1-channel → tile to 3ch → ResNet50 backbone."""
+    h, w = IMG_SIZE
+    inp = L.Input(shape=(h, w, 1))
+    
+    # Convert grayscale to 3-channel
+    x = GrayscaleToRGB()(inp)
+    
+    # Apply the correct preprocessing for ResNet
+    x = tf.keras.applications.resnet.preprocess_input(x)
+
+    # Build the ResNet backbone
+    base = tf.keras.applications.ResNet50(
+        include_top=False,
+        weights="imagenet",
+        input_shape=(h, w, 3),
+        pooling="avg"
+    )
+
+    # Set layer trainability
+    for layer in base.layers[:-TRAINABLE_AT]:
+        layer.trainable = False
+    for layer in base.layers[-TRAINABLE_AT:]:
+        layer.trainable = True
+
+    # Classification head
+    x = base(x)
+    x = L.Dropout(0.3)(x)
+    out = L.Dense(classes, activation="softmax")(x)
+
+    print(
+        f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
+    )
+
+    return Model(inp, out, name="resnet50")
+
+
 def _sepconv(x, f, k=3):
     x = L.SeparableConv2D(f, k, padding="same", use_bias=False)(x)
     x = L.BatchNormalization()(x)

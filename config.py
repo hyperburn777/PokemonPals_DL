@@ -17,12 +17,12 @@ WEIGHT_DECAY = 1e-4
 LABEL_SMOOTH = 0.05
 parser.add_argument(
     "--BACKBONE", type=str, default="baseline", help="Model backbone to use."
-)  # or "silhouette" or "effnet"
+)  # or "silhouette" or "effnet" or "resnet"
 args = parser.parse_args()
 BACKBONE = args.BACKBONE.lower()
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
-TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "175"))
+TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "100"))
 SEED = 42
 
 # Paths
