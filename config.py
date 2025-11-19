@@ -22,7 +22,7 @@ args = parser.parse_args()
 BACKBONE = args.BACKBONE.lower()
 
 # EfficientNet fine-tuning depth (0 = freeze all, higher = unfreeze more)
-TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "100"))
+TRAINABLE_AT = int(os.getenv("TRAINABLE_AT", "150"))
 SEED = 42
 
 # Paths
