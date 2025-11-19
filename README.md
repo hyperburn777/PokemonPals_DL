@@ -1,4 +1,4 @@
-# Who's That Pokémon? A Silhouette-Based Deep Learning Approach to Fine-Grained Character Recognition
+# Who's That Pokémon? A Silhouette-Based Deep Learning Approach to Character Classification
 
 ## Abstract
 
