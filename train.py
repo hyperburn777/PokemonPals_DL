@@ -13,7 +13,7 @@ from config import (
     SEED,
 )
 from data import load_datasets
-from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn
+from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn, build_resnet, build_resnet34
 from utils import plot_history, save_cls_report
 
 os.makedirs(RESULT_DIR, exist_ok=True)
@@ -28,6 +28,10 @@ if BACKBONE.lower() == "effnet":
     model = build_efficientnet(num_classes)
 elif BACKBONE.lower() == "baseline":
     model = build_simple_cnn(num_classes)
+elif BACKBONE.lower() == "resnet":
+    model = build_resnet(num_classes)
+elif BACKBONE.lower() == "resnet34":
+    model = build_resnet34(num_classes)
 else:
     model = build_silhouette_cnn(num_classes)
 
