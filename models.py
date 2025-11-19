@@ -1,7 +1,16 @@
 import tensorflow as tf
 from tensorflow.keras import layers as L, Model
 from tensorflow.keras.applications.efficientnet import preprocess_input
-
+from tensorflow.keras.applications import (
+    EfficientNetB0,
+    EfficientNetB1,
+    EfficientNetB2,
+    EfficientNetB3,
+    EfficientNetB4,
+    EfficientNetB5,
+    EfficientNetB6,
+    EfficientNetB7,
+)
 from classification_models.tfkeras import Classifiers
 
 from config import IMG_SIZE, CHANNELS, TRAINABLE_AT
@@ -46,16 +55,35 @@ def build_simple_cnn(classes):
     return Model(inp, out, name="baseline")
 
 
-def build_efficientnet(classes):
+def build_efficientnet(classes, model):
     """1-channel → tile to 3ch → EfficientNetB0 backbone."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, 1))
     x = GrayscaleToRGB()(inp)
     x = EfficientNetPreprocess()(x)
+    params = {
+        "include_top": False,
+        "weights": "imagenet",
+        "input_shape": (h, w, 3),
+        "pooling": "avg",
+    }
 
-    base = tf.keras.applications.EfficientNetB0(
-        include_top=False, weights="imagenet", input_shape=(h, w, 3), pooling="avg"
-    )
+    if model == "b1":
+        base = EfficientNetB1(**params)
+    elif model == "b2":
+        base = EfficientNetB2(**params)
+    elif model == "b3":
+        base = EfficientNetB3(**params)
+    elif model == "b4":
+        base = EfficientNetB4(**params)
+    elif model == "b5":
+        base = EfficientNetB5(**params)
+    elif model == "b6":
+        base = EfficientNetB6(**params)
+    elif model == "b7":
+        base = EfficientNetB7(**params)
+    else:
+        base = EfficientNetB0(**params)
 
     for layer in base.layers[:-TRAINABLE_AT]:
         layer.trainable = False
@@ -70,27 +98,32 @@ def build_efficientnet(classes):
         f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
     )
 
-    return Model(inp, out, name="effnet")
+    return Model(inp, out, name=f"effnet_{model}")
 
 
-def build_resnet(classes):
-    """1-channel → tile to 3ch → ResNet50 backbone."""
+def build_resnet(classes, model):
+    """1-channel → tile to 3ch → ResNet backbone."""
     h, w = IMG_SIZE
     inp = L.Input(shape=(h, w, 1))
-    
-    # Convert grayscale to 3-channel
     x = GrayscaleToRGB()(inp)
-    
-    # Apply the correct preprocessing for ResNet
-    x = tf.keras.applications.resnet.preprocess_input(x)
+    params = {
+        "include_top": False,
+        "weights": "imagenet",
+        "input_shape": (h, w, 3),
+        "pooling": "avg",
+    }
 
-    # Build the ResNet backbone
-    base = tf.keras.applications.ResNet50(
-        include_top=False,
-        weights="imagenet",
-        input_shape=(h, w, 3),
-        pooling="avg"
-    )
+    if model == "18":
+        BackboneClass, preprocess_input = Classifiers.get("resnet18")
+        x = preprocess_input(x)
+        base = BackboneClass(**params)
+    elif model == "34":
+        BackboneClass, preprocess_input = Classifiers.get("resnet34")
+        x = preprocess_input(x)
+        base = BackboneClass(**params)
+    elif model == "50":
+        x = tf.keras.applications.resnet.preprocess_input(x)
+        base = tf.keras.applications.ResNet50(**params)
 
     # Set layer trainability
     for layer in base.layers[:-TRAINABLE_AT]:
@@ -107,85 +140,4 @@ def build_resnet(classes):
         f"Trainable layers: {sum([l.trainable for l in base.layers])}/{len(base.layers)}"
     )
 
-    return Model(inp, out, name="resnet50")
-
-
-def build_resnet34(classes):
-    # Pick backbone and preprocess function
-    BackboneClass, preprocess_input = Classifiers.get('resnet34')
-
-    # Shapes
-    h, w = IMG_SIZE
-    inp = L.Input(shape=(h, w, 1), name="grayscale_input")
-
-    # Convert grayscale → RGB
-    x = GrayscaleToRGB(name="gray2rgb")(inp)
-
-    # Apply model-specific preprocessing
-    x = preprocess_input(x)
-
-    # Build the pretrained backbone
-    base = BackboneClass(
-        include_top=False,
-        weights="imagenet",
-        input_shape=(h, w, 3),  # RGB input
-        pooling=None
-    )
-
-    # Apply layer freezing logic
-    for layer in base.layers[:-TRAINABLE_AT]:
-        layer.trainable = False
-    for layer in base.layers[-TRAINABLE_AT:]:
-        layer.trainable = True
-
-    # Pass preprocessed image through backbone
-    feats = base(x)
-
-    # GAP + classification head
-    feats = L.GlobalAveragePooling2D(name="gap")(feats)
-    feats = L.Dropout(0.3, name="dropout")(feats)
-    out = L.Dense(classes, activation="softmax", name="classifier")(feats)
-
-    print(
-        f"Trainable layers: {sum([l.trainable for l in base.layers])}/"
-        f"{len(base.layers)}"
-    )
-
-    return Model(inp, out, name=f"resnet34")
-
-
-def _sepconv(x, f, k=3):
-    x = L.SeparableConv2D(f, k, padding="same", use_bias=False)(x)
-    x = L.BatchNormalization()(x)
-    return L.Activation("relu")(x)
-
-
-def _se_block(x, r=8):
-    f = x.shape[-1]
-    s = L.GlobalAveragePooling2D()(x)
-    s = L.Dense(max(f // r, 8), activation="relu")(s)
-    s = L.Dense(f, activation="sigmoid")(s)
-    return L.Multiply()([x, L.Reshape((1, 1, f))(s)])
-
-
-def build_silhouette_cnn(classes):
-    """Compact CNN tailored for shape recognition."""
-    h, w = IMG_SIZE
-    inp = L.Input(shape=(h, w, CHANNELS))
-
-    x = _sepconv(inp, 32)
-    x = _sepconv(x, 32)
-    x = L.MaxPool2D()(x)
-    x = _se_block(x)
-    x = _sepconv(x, 64)
-    x = _sepconv(x, 64)
-    x = L.MaxPool2D()(x)
-    x = _se_block(x)
-    x = _sepconv(x, 96)
-    x = _sepconv(x, 96)
-    x = L.MaxPool2D()(x)
-
-    x = L.GlobalAveragePooling2D()(x)
-    x = L.Dropout(0.3)(x)
-    out = L.Dense(classes, activation="softmax")(x)
-    return Model(inp, out, name="SilhouetteCNN")
+    return Model(inp, out, name=f"resnet{model}")
