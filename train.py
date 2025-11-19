@@ -17,9 +17,7 @@ from data import load_datasets
 from models import (
     build_simple_cnn,
     build_efficientnet,
-    build_silhouette_cnn,
     build_resnet,
-    build_resnet34,
 )
 from utils import plot_history, save_cls_report
 
