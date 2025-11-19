@@ -32,5 +32,5 @@ SEED = 42
 
 TEST_DIR = os.getenv("TEST_DIR", "data/testset")
 RESULT_DIR = (
-    "result/{BACKBONE}" if BACKBONE == "baseline" else f"result/{BACKBONE}_{MODEL}"
+    "result/{BACKBONE}" if BACKBONE == "baseline" else f"result/{BACKBONE}/{MODEL}"
 )
