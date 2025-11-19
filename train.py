@@ -5,6 +5,7 @@ from tensorflow.keras.optimizers import AdamW
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 
 from config import (
+    MODEL,
     RESULT_DIR,
     INIT_LR,
     WEIGHT_DECAY,
@@ -13,7 +14,13 @@ from config import (
     SEED,
 )
 from data import load_datasets
-from models import build_simple_cnn, build_efficientnet, build_silhouette_cnn, build_resnet, build_resnet34
+from models import (
+    build_simple_cnn,
+    build_efficientnet,
+    build_silhouette_cnn,
+    build_resnet,
+    build_resnet34,
+)
 from utils import plot_history, save_cls_report
 
 os.makedirs(RESULT_DIR, exist_ok=True)
@@ -24,16 +31,21 @@ tf.keras.utils.set_random_seed(SEED)
 train_ds, val_ds, test_ds, class_names = load_datasets(return_class_names=True)
 num_classes = len(class_names)
 
-if BACKBONE.lower() == "effnet":
-    model = build_efficientnet(num_classes)
+if BACKBONE.lower() == "effnet" and MODEL.lower() in [
+    "b0",
+    "b1",
+    "b2",
+    "b3",
+    "b4",
+    "b5",
+    "b6",
+    "b7",
+]:
+    model = build_efficientnet(num_classes, model=MODEL.lower())
 elif BACKBONE.lower() == "baseline":
     model = build_simple_cnn(num_classes)
-elif BACKBONE.lower() == "resnet":
-    model = build_resnet(num_classes)
-elif BACKBONE.lower() == "resnet34":
-    model = build_resnet34(num_classes)
-else:
-    model = build_silhouette_cnn(num_classes)
+elif BACKBONE.lower() == "resnet" and MODEL.lower() in ["18", "34", "50"]:
+    model = build_resnet(num_classes, model=MODEL.lower())
 
 model.summary()
 
@@ -72,7 +84,6 @@ history = model.fit(
     validation_data=val_ds,
     epochs=EPOCHS,
     callbacks=[ckpt, es],
-    # callbacks=[ckpt],
     verbose=1,
 )
 
@@ -91,9 +102,6 @@ for xb, yb in test_ds:
     logits = model.predict(xb, verbose=0)
     y_true.extend(yb.numpy().tolist())
     y_pred.extend(np.argmax(logits, axis=1).tolist())
-
-# cm = confusion_matrix(y_true, y_pred, labels=list(range(num_classes)))
-# plot_confusion_matrix(cm, class_names, normalize=True, out="cm_norm.png")
 
 save_cls_report(y_true, y_pred, class_names)
 
