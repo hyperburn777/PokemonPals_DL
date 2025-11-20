@@ -34,3 +34,4 @@ TEST_DIR = os.getenv("TEST_DIR", "data/testset")
 RESULT_DIR = (
     "result/{BACKBONE}" if BACKBONE == "baseline" else f"result/{BACKBONE}/{MODEL}"
 )
+DATA_DIR = "data/silhouettes"
