@@ -17,4 +17,4 @@ module load python/3.12.8
 
 cd ~/PokemonPals_DL
 pip install -r requirements.txt
-python train.py --BACKBONE resnet --MODEL 18
+python train.py --BACKBONE resnet --MODEL 18 --INVERSE 1
