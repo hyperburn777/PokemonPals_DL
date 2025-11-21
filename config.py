@@ -35,7 +35,7 @@ TRAINABLE_AT = int(
 SEED = 42
 
 TEST_DIR = os.getenv("TEST_DIR", "data/testset")
-RESULT_DIR = "result/{BACKBONE}" 
+RESULT_DIR = f"result/{BACKBONE}" 
 if MODEL: 
     RESULT_DIR += f"/{MODEL}"
     
