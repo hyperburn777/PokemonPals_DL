@@ -20,9 +20,13 @@ parser.add_argument(
 parser.add_argument(
     "--MODEL", type=str, default=None, help="EfficientNet backbone to use."
 )  # "b0", "b1", ..., "b7" for EffNet; 18/34/50 for ResNet
+parser.add_argument(
+    "--INVERSE", type=str, default=False, help="Inverse image colors."
+)  # if True, black bg → white bg
 args = parser.parse_args()
 BACKBONE = args.BACKBONE.lower()
 MODEL = args.MODEL.lower() if args.MODEL else None
+INVERSE = args.INVERSE in [True, "True", "true", "1", "yes", "Yes"]
 
 
 TRAINABLE_AT = int(
@@ -31,6 +35,10 @@ TRAINABLE_AT = int(
 SEED = 42
 
 TEST_DIR = os.getenv("TEST_DIR", "data/testset")
-RESULT_DIR = (
-    "result/{BACKBONE}" if BACKBONE == "baseline" else f"result/{BACKBONE}/{MODEL}"
-)
+RESULT_DIR = f"result/{BACKBONE}" 
+if MODEL: 
+    RESULT_DIR += f"/{MODEL}"
+    
+if INVERSE:
+    RESULT_DIR += "/color-inverted"
+
