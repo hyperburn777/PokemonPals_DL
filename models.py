@@ -110,16 +110,16 @@ def build_resnet(classes, model):
         "include_top": False,
         "weights": "imagenet",
         "input_shape": (h, w, 3),
-        "pooling": "avg",
+        "pooling": "avg" if model == "50" else None,
     }
 
     if model == "18":
-        BackboneClass, preprocess_input = Classifiers.get("resnet18")
-        x = preprocess_input(x)
+        BackboneClass, preprocess = Classifiers.get("resnet18")
+        x = preprocess(x)
         base = BackboneClass(**params)
     elif model == "34":
-        BackboneClass, preprocess_input = Classifiers.get("resnet34")
-        x = preprocess_input(x)
+        BackboneClass, preprocess = Classifiers.get("resnet34")
+        x = preprocess(x)
         base = BackboneClass(**params)
     elif model == "50":
         x = tf.keras.applications.resnet.preprocess_input(x)
@@ -133,6 +133,8 @@ def build_resnet(classes, model):
 
     # Classification head
     x = base(x)
+    if model == "18" or model == "34":
+        x = L.GlobalAveragePooling2D()(x)
     x = L.Dropout(0.3)(x)
     out = L.Dense(classes, activation="softmax")(x)
 
